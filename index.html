@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Myanmar Voice Bot | Web</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #05050f; --card: rgba(10,12,28,0.88);
+      --cyan: #00f0ff; --pink: #ff00aa; --purple: #b400ff; --green: #00ff9d;
+      --text: #e8ecff; --muted: #8b95b8; --border: rgba(0,240,255,0.22);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Rajdhani', sans-serif; background: var(--bg); color: var(--text);
+      min-height: 100vh; line-height: 1.5;
+    }
+    body::before {
+      content:''; position:fixed; inset:0;
+      background: linear-gradient(rgba(0,240,255,0.03) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(0,240,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px; pointer-events:none; z-index:0;
+    }
+    .wrap { max-width:720px; margin:0 auto; padding:24px 16px 60px; position:relative; z-index:1; }
+    header { text-align:center; padding:32px 0 24px; }
+    .logo {
+      font-family:'Orbitron',sans-serif; font-size:clamp(1.4rem,5vw,2.2rem); font-weight:800; letter-spacing:3px;
+      background: linear-gradient(90deg,var(--cyan),var(--pink),var(--purple));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      filter: drop-shadow(0 0 12px rgba(0,240,255,0.5));
+    }
+    .tag { color:var(--muted); letter-spacing:2px; margin-top:8px; font-size:0.95rem; }
+    .card {
+      background:var(--card); border:1px solid var(--border); border-radius:16px;
+      padding:20px; margin-bottom:16px; backdrop-filter:blur(14px);
+    }
+    .card h3 {
+      font-family:'Orbitron',sans-serif; font-size:0.8rem; letter-spacing:2px;
+      color:var(--cyan); margin-bottom:12px; display:flex; align-items:center; gap:8px;
+    }
+    .card h3::before {
+      content:''; width:7px; height:7px; background:var(--pink); border-radius:50%;
+      box-shadow:0 0 8px var(--pink);
+    }
+    label { display:block; font-size:0.9rem; color:var(--muted); margin-bottom:6px; }
+    input[type=url], input[type=text] {
+      width:100%; padding:12px 14px; background:rgba(0,0,0,0.45);
+      border:1px solid var(--border); border-radius:10px; color:var(--text);
+      font-family:inherit; font-size:1rem; outline:none;
+    }
+    input:focus { border-color:var(--cyan); box-shadow:0 0 14px rgba(0,240,255,0.25); }
+    .file-box {
+      border:1px dashed var(--border); border-radius:12px; padding:24px;
+      text-align:center; cursor:pointer; color:var(--muted); transition:0.25s;
+    }
+    .file-box:hover, .file-box.drag { border-color:var(--cyan); background:rgba(0,240,255,0.05); color:var(--cyan); }
+    .file-box input { display:none; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media(max-width:520px){ .row{ grid-template-columns:1fr; } }
+    select {
+      width:100%; padding:11px 12px; background:rgba(0,0,0,0.45);
+      border:1px solid var(--border); border-radius:10px; color:var(--text);
+      font-family:inherit; font-size:1rem; outline:none; cursor:pointer;
+    }
+    .mode-group { display:flex; gap:10px; }
+    .mode-btn {
+      flex:1; padding:12px; border-radius:10px; border:1px solid var(--border);
+      background:rgba(0,0,0,0.35); color:var(--muted); font-family:'Orbitron',sans-serif;
+      font-size:0.72rem; letter-spacing:1px; cursor:pointer; text-align:center; transition:0.25s;
+    }
+    .mode-btn.active { border-color:var(--cyan); color:var(--cyan); background:rgba(0,240,255,0.1); }
+    .mode-btn.active.pink { border-color:var(--pink); color:var(--pink); background:rgba(255,0,170,0.1); }
+    .btn {
+      width:100%; padding:14px; margin-top:8px; font-family:'Orbitron',sans-serif;
+      font-size:0.9rem; letter-spacing:2px; border:none; border-radius:10px;
+      cursor:pointer; text-transform:uppercase; transition:0.3s;
+    }
+    .btn-run {
+      background:linear-gradient(90deg,var(--cyan),var(--purple)); color:#000; font-weight:700;
+      box-shadow:0 0 22px rgba(0,240,255,0.45);
+    }
+    .btn-run:hover:not(:disabled){ transform:scale(1.02); }
+    .btn-run:disabled{ opacity:0.5; cursor:not-allowed; }
+    .status {
+      display:none; padding:12px; border-radius:10px; margin-top:12px;
+      font-size:0.95rem; text-align:center;
+    }
+    .status.show{ display:block; }
+    .status.loading{ background:rgba(0,240,255,0.1); border:1px solid var(--cyan); color:var(--cyan); }
+    .status.error{ background:rgba(255,0,80,0.1); border:1px solid #ff4060; color:#ff6b8a; }
+    .status.ok{ background:rgba(0,255,157,0.1); border:1px solid var(--green); color:var(--green); }
+    .result { display:none; }
+    .result.show{ display:block; }
+    .result-item {
+      background:rgba(0,0,0,0.35); border:1px solid var(--border); border-radius:10px;
+      padding:14px; margin-bottom:10px; display:flex; justify-content:space-between;
+      align-items:center; gap:10px; flex-wrap:wrap;
+    }
+    .result-item strong{ color:var(--cyan); }
+    .result-item span{ color:var(--muted); font-size:0.9rem; }
+    .mini {
+      padding:7px 14px; font-size:0.75rem; font-family:'Orbitron',sans-serif;
+      letter-spacing:1px; border-radius:6px; border:1px solid var(--cyan);
+      background:transparent; color:var(--cyan); cursor:pointer; text-decoration:none;
+    }
+    .mini:hover{ background:rgba(0,240,255,0.1); }
+    footer{ text-align:center; margin-top:28px; color:var(--muted); font-size:0.85rem; }
+    footer span{ color:var(--cyan); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">MYANMAR VOICE BOT</div>
+      <p class="tag">Real Web App • Neon Cyber</p>
+    </header>
+
+    <div class="card">
+      <h3>INPUT</h3>
+      <label>YouTube / TikTok Link</label>
+      <input type="url" id="url" placeholder="https://youtube.com/... or tiktok.com/..." />
+      <p style="text-align:center;color:var(--muted);margin:12px 0 8px;font-size:0.9rem;">— သို့မဟုတ် —</p>
+      <div class="file-box" id="drop">
+        <input type="file" id="file" accept="video/*" />
+        <div>📁 Video ဖိုင် ဖိဆွဲထည့်ပါ / နှိပ်၍ ရွေးပါ</div>
+      </div>
+      <p id="fname" style="margin-top:8px;color:var(--cyan);font-size:0.9rem;display:none;"></p>
+    </div>
+
+    <div class="card">
+      <h3>SETTINGS</h3>
+      <div class="row" style="margin-bottom:12px;">
+        <div>
+          <label>အသံ</label>
+          <select id="voice">
+            <option value="thiha">👨 Thiha</option>
+            <option value="nilar">👩 Nilar</option>
+          </select>
+        </div>
+        <div>
+          <label>အမြန်နှုန်း</label>
+          <select id="speed">
+            <option value="0.8">0.8x</option>
+            <option value="1.0">1.0x</option>
+            <option value="1.2">1.2x</option>
+            <option value="1.4" selected>1.4x</option>
+            <option value="1.6">1.6x</option>
+            <option value="1.8">1.8x</option>
+            <option value="2.0">2.0x</option>
+          </select>
+        </div>
+      </div>
+      <label>Mode</label>
+      <div class="mode-group">
+        <button type="button" class="mode-btn" id="mSimple" data-m="simple">ရိုးရိုး<br><small>SRT မပါ</small></button>
+        <button type="button" class="mode-btn active pink" id="mAuto" data-m="auto">ပုံမှန်<br><small>SRT ပါ</small></button>
+      </div>
+    </div>
+
+    <button class="btn btn-run" id="run">▶ START PROCESS</button>
+    <div class="status" id="status"></div>
+
+    <div class="card result" id="result">
+      <h3>RESULT</h3>
+      <div class="result-item">
+        <div><strong>🎧 Audio</strong><br><span id="rAudio">—</span></div>
+        <a class="mini" id="dlAudio" href="#" download>Download</a>
+      </div>
+      <div class="result-item" id="rSrtRow">
+        <div><strong>📝 SRT</strong><br><span>Subtitle</span></div>
+        <a class="mini" id="dlSrt" href="#" download>Download</a>
+      </div>
+      <div class="result-item">
+        <div><strong>🎬 Video</strong><br><span id="rVideo">—</span></div>
+        <a class="mini" id="dlVideo" href="#" download>Download</a>
+      </div>
+      <button class="btn btn-run" style="margin-top:14px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);box-shadow:none;" onclick="location.reload()">↺ New</button>
+    </div>
+
+    <footer>Real processing • <span>Whisper tiny + Edge-TTS + FFmpeg</span></footer>
+  </div>
+
+  <script>
+    let mode = 'auto', selectedFile = null;
+
+    document.getElementById('mSimple').onclick = () => {
+      mode = 'simple';
+      document.getElementById('mSimple').classList.add('active');
+      document.getElementById('mSimple').classList.remove('pink');
+      document.getElementById('mAuto').classList.remove('active','pink');
+    };
+    document.getElementById('mAuto').onclick = () => {
+      mode = 'auto';
+      document.getElementById('mAuto').classList.add('active','pink');
+      document.getElementById('mSimple').classList.remove('active');
+    };
+
+    const drop = document.getElementById('drop');
+    const fileInput = document.getElementById('file');
+    drop.onclick = () => fileInput.click();
+    drop.ondragover = e => { e.preventDefault(); drop.classList.add('drag'); };
+    drop.ondragleave = () => drop.classList.remove('drag');
+    drop.ondrop = e => {
+      e.preventDefault(); drop.classList.remove('drag');
+      if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    };
+    fileInput.onchange = () => { if (fileInput.files[0]) setFile(fileInput.files[0]); };
+
+    function setFile(f) {
+      selectedFile = f;
+      document.getElementById('fname').style.display = 'block';
+      document.getElementById('fname').textContent = '✅ ' + f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
+      document.getElementById('url').value = '';
+    }
+
+    function showStatus(msg, type) {
+      const s = document.getElementById('status');
+      s.className = 'status show ' + type;
+      s.textContent = msg;
+    }
+
+    document.getElementById('run').onclick = async () => {
+      const url = document.getElementById('url').value.trim();
+      if (!url && !selectedFile) {
+        showStatus('Link ထည့်ပါ သို့မဟုတ် Video ရွေးပါ', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('run');
+      btn.disabled = true;
+      document.getElementById('result').classList.remove('show');
+      showStatus('⏳ Processing... (မိနစ်အနည်းငယ် ကြာနိုင်ပါတယ်)', 'loading');
+
+      const fd = new FormData();
+      if (url) fd.append('url', url);
+      if (selectedFile) fd.append('file', selectedFile);
+      fd.append('voice', document.getElementById('voice').value);
+      fd.append('speed', document.getElementById('speed').value);
+      fd.append('mode', mode);
+
+      try {
+        const res = await fetch('/api/process', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed');
+
+        showStatus('✅ ပြီးပါပြီ!', 'ok');
+        document.getElementById('rAudio').textContent = data.voice + ' • ' + data.speed + 'x • ' + data.duration + 's';
+        document.getElementById('rVideo').textContent = 'Final video ready';
+        document.getElementById('dlAudio').href = data.audio_url;
+        document.getElementById('dlVideo').href = data.video_url;
+
+        if (data.srt_url) {
+          document.getElementById('rSrtRow').style.display = 'flex';
+          document.getElementById('dlSrt').href = data.srt_url;
+        } else {
+          document.getElementById('rSrtRow').style.display = 'none';
+        }
+        document.getElementById('result').classList.add('show');
+      } catch (e) {
+        showStatus('❌ ' + (e.message || 'Error'), 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
